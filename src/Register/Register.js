@@ -38,10 +38,10 @@ export default function Register() {
     const [savedOtp, setSavedOtp] = useState("");
     const [open, setOpen] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
-
-
-
-
+    const [sensorId, setSensorId] = useState("");
+    const [sensorIdError, setSensorIdError] = useState("");
+    const [sensorModalOpen, setSensorModalOpen] = useState(false);
+    const [userId, setUserId] = useState("");
 
     const handleTelephoneChange = (event) => {
         setTelephone(event.target.value);
@@ -53,7 +53,6 @@ export default function Register() {
     };
 
     const handleVerifyClick = () => {
-        console.log(`${process.env.REACT_APP_BACKEND_URL}`);
         if (!telephone) {
             alert('Please enter your telephone number.');
             return;
@@ -167,12 +166,77 @@ export default function Register() {
                     const loginResult = await loginResponse.json();
                     localStorage.setItem('token', loginResult.token);
                     setAuth({ isAuthenticated: true, token: loginResult.token });
-                    navigate(`/dashboard`);
+                    setUserId(loginResult.user_id);
+                    // Open sensor registration modal
+                    setSensorModalOpen(true);
                 } else {
                     console.error('Failed to login:', loginResponse.statusText);
                 }
             } else {
                 console.error('Failed to submit form:', submitResponse.statusText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    const handleSensorIdChange = (event) => {
+        const value = event.target.value;
+        setSensorId(value);
+        if (!/^\d{4}$/.test(value)) {
+            setSensorIdError('Sensor ID must be a 4-digit number.');
+        } else {
+            setSensorIdError('');
+        }
+    };
+
+    const handleSensorRegistration = async () => {
+        if (!sensorId) {
+            alert('Please enter a 4-digit Sensor ID.');
+            return;
+        }
+
+        try {
+            const sensorData = {
+                sensor: {
+                    sensor_id: sensorId,
+                    user_id: userId // Assuming this is the user ID, you may need to adjust it
+                }
+            };
+
+            const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/sensors`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(sensorData)
+            });
+
+            if (response.ok) {
+                alert('Sensor registered successfully.');
+
+                const sensorThresholdData = {
+                    sensor_threshold: {
+                        sensor_id: sensorId
+                    }
+                };
+
+                const thresholdResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/sensor_thresholds`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(sensorThresholdData)
+                });
+
+                if (thresholdResponse.ok) {
+                    setSensorModalOpen(false);
+                    navigate('/dashboard');
+                } else {
+                    console.error('Failed to set sensor thresholds:', thresholdResponse.statusText);
+                }
+            } else {
+                console.error('Failed to register sensor:', response.statusText);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -313,6 +377,35 @@ export default function Register() {
                             onClick={handleModalClose}
                         >
                             Close
+                        </Button>
+                    </Box>
+                </Modal>
+                <Modal
+                    open={sensorModalOpen}
+                    onClose={() => setSensorModalOpen(false)}
+                    aria-labelledby="sensor-modal-title"
+                    aria-describedby="sensor-modal-description"
+                >
+                    <Box sx={style}>
+                        <Typography id="sensor-modal-title" variant="h6" component="h2">
+                            Register Your First Sensor
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            label="Sensor ID"
+                            variant="outlined"
+                            margin="normal"
+                            value={sensorId}
+                            onChange={handleSensorIdChange}
+                            error={!!sensorIdError}
+                            helperText={sensorIdError}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleSensorRegistration}
+                            sx={{ mt: 2 }}
+                        >
+                            Register
                         </Button>
                     </Box>
                 </Modal>

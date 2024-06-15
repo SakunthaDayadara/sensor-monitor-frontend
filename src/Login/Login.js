@@ -17,6 +17,7 @@ import {useState} from "react";
 import {Alert, AlertTitle} from "@mui/material";
 import {useNavigate} from "react-router-dom";
 import useAuth from "../Hooks/useAuth";
+import background from './background.jpg';
 
 
 
@@ -79,7 +80,7 @@ export default function Login() {
                     sm={4}
                     md={7}
                     sx={{
-                        backgroundImage: `url()`,
+                        backgroundImage: `url(${background})`,
                         backgroundRepeat: 'no-repeat',
                         backgroundColor: (t) =>
                             t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],

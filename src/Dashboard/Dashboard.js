@@ -1,105 +1,206 @@
-// Dashboard.js
-
-import React, { useState, useEffect } from 'react';
-import { Grid, FormControl, InputLabel, Select, MenuItem, Typography } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-const dummyData = [
-    { id: 1, sensor_id: 1, date_column: '2023-01-01', time_column: '08:00:00', data_value: 25, created_at: '2023-01-01', updated_at: '2023-01-01' },
-    { id: 2, sensor_id: 1, date_column: '2023-01-02', time_column: '08:00:00', data_value: 30, created_at: '2023-01-02', updated_at: '2023-01-02' },
-    { id: 3, sensor_id: 1, date_column: '2023-01-03', time_column: '08:00:00', data_value: 28, created_at: '2023-01-03', updated_at: '2023-01-03' },
-    { id: 4, sensor_id: 1, date_column: '2023-01-04', time_column: '08:00:00', data_value: 32, created_at: '2023-01-04', updated_at: '2023-01-04' },
-    { id: 5, sensor_id: 1, date_column: '2023-01-05', time_column: '08:00:00', data_value: 27, created_at: '2023-01-05', updated_at: '2023-01-05' },
-    { id: 6, sensor_id: 2, date_column: '2023-01-01', time_column: '08:00:00', data_value: 22, created_at: '2023-01-01', updated_at: '2023-01-01' },
-    { id: 7, sensor_id: 2, date_column: '2023-01-02', time_column: '08:00:00', data_value: 26, created_at: '2023-01-02', updated_at: '2023-01-02' },
-    { id: 8, sensor_id: 2, date_column: '2023-01-03', time_column: '08:00:00', data_value: 29, created_at: '2023-01-03', updated_at: '2023-01-03' },
-    { id: 9, sensor_id: 2, date_column: '2023-01-04', time_column: '08:00:00', data_value: 31, created_at: '2023-01-04', updated_at: '2023-01-04' },
-    { id: 10, sensor_id: 2, date_column: '2023-01-05', time_column: '08:00:00', data_value: 24, created_at: '2023-01-05', updated_at: '2023-01-05' },
-    { id: 11, sensor_id: 3, date_column: '2023-01-01', time_column: '08:00:00', data_value: 20, created_at: '2023-01-01', updated_at: '2023-01-01' },
-    { id: 12, sensor_id: 3, date_column: '2023-01-02', time_column: '08:00:00', data_value: 23, created_at: '2023-01-02', updated_at: '2023-01-02' },
-    { id: 13, sensor_id: 3, date_column: '2023-01-03', time_column: '08:00:00', data_value: 27, created_at: '2023-01-03', updated_at: '2023-01-03' },
-    { id: 14, sensor_id: 3, date_column: '2023-01-04', time_column: '08:00:00', data_value: 29, created_at: '2023-01-04', updated_at: '2023-01-04' },
-    { id: 15, sensor_id: 3, date_column: '2023-01-05', time_column: '08:00:00', data_value: 26, created_at: '2023-01-05', updated_at: '2023-01-05' },
-];
+import * as React from 'react';
+import { styled, createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import MuiDrawer from '@mui/material/Drawer';
+import Box from '@mui/material/Box';
+import MuiAppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import {Outlet, useNavigate} from 'react-router-dom';
+import useAuth from "../Hooks/useAuth";
+import LogoutIcon from "@mui/icons-material/Logout";
+import {ListItems} from "./ListItem";
 
 
-const Dashboard = () => {
-    const [selectedSensor, setSelectedSensor] = useState(1); // Initialize with sensor_id 1
-    const [sensorData, setSensorData] = useState([]);
 
-    // Function to handle sensor selection change
-    const handleSensorChange = (event) => {
-        const selectedSensorId = event.target.value;
-        setSelectedSensor(selectedSensorId);
-        // Filter dummy data for selected sensor
-        const filteredData = dummyData.filter(data => data.sensor_id === selectedSensorId);
-        setSensorData(filteredData);
+const drawerWidth = 240;
+
+const AppBar = styled(MuiAppBar, {
+    shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+    zIndex: theme.zIndex.drawer + 1,
+    transition: theme.transitions.create(['width', 'margin'], {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...(open && {
+        marginLeft: drawerWidth,
+        width: `calc(100% - ${drawerWidth}px)`,
+        transition: theme.transitions.create(['width', 'margin'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+        }),
+    }),
+}));
+
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
+    ({ theme, open }) => ({
+        '& .MuiDrawer-paper': {
+            position: 'relative',
+            whiteSpace: 'nowrap',
+            width: drawerWidth,
+            transition: theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+            }),
+            boxSizing: 'border-box',
+            ...(!open && {
+                overflowX: 'hidden',
+                transition: theme.transitions.create('width', {
+                    easing: theme.transitions.easing.sharp,
+                    duration: theme.transitions.duration.leavingScreen,
+                }),
+                width: theme.spacing(7),
+                [theme.breakpoints.up('sm')]: {
+                    width: theme.spacing(9),
+                },
+            }),
+        },
+    }),
+);
+
+
+const defaultTheme = createTheme();
+
+export default function Dashboard() {
+    const [open, setOpen] = React.useState(true);
+    const [userData, setUserData] = React.useState(null);
+
+    const { setAuth } = useAuth();
+    const navigate = useNavigate();
+
+
+    const toggleDrawer = () => {
+        setOpen(!open);
     };
 
-    // Load sensor data for default sensor_id on component mount
-    useEffect(() => {
-        const defaultSensorData = dummyData.filter(data => data.sensor_id === selectedSensor);
-        setSensorData(defaultSensorData);
-    }, [selectedSensor]);
+    React.useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                // Fetch token from local storage
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Token not found');
+                }
+
+                // Fetch user data using token
+                const autoLoginResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/auto_login`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                if (!autoLoginResponse.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const autoLoginData = await autoLoginResponse.json();
+
+                // Fetch additional user info using user ID
+                const findUserResponse = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/find_by_user_id?user_id=${autoLoginData.user_id}`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                if (!findUserResponse.ok) {
+                    throw new Error('Failed to fetch user details');
+                }
+                const userData = await findUserResponse.json();
+
+                // Update state with user data
+                setUserData(userData);
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+
+    const handleLogout = () => {
+        // Clear user session data
+        localStorage.removeItem('token');
+        setAuth({ isAuthenticated: false, role: null, token: null });
+        // Redirect to login page
+        navigate('/');
+    };
+
 
     return (
-        <Grid container spacing={2}>
-            {/* Grid item for dropdown and line chart */}
-            <Grid item xs={10}>
-                <Typography variant="h6">Sensor ID:</Typography>
-                <FormControl fullWidth>
-                    <InputLabel>Select Sensor</InputLabel>
-                    <Select value={selectedSensor} onChange={handleSensorChange}>
-                        <MenuItem value={1}>Sensor 1</MenuItem>
-                        <MenuItem value={2}>Sensor 2</MenuItem>
-                    </Select>
-                </FormControl>
-                {/* Line chart */}
-                <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={sensorData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date_column" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="data_value" stroke="#8884d8" />
-                    </LineChart>
-                </ResponsiveContainer>
-            </Grid>
 
-            {/* Grid item for table */}
-            <Grid item xs={12}>
-                <Typography variant="h6">Sensor Data Table</Typography>
-                {/* Table to display sensor data */}
-                <table>
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Sensor ID</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Data Value</th>
-                        <th>Created At</th>
-                        <th>Updated At</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {sensorData.map((data) => (
-                        <tr key={data.id}>
-                            <td>{data.id}</td>
-                            <td>{data.sensor_id}</td>
-                            <td>{data.date_column}</td>
-                            <td>{data.time_column}</td>
-                            <td>{data.data_value}</td>
-                            <td>{data.created_at}</td>
-                            <td>{data.updated_at}</td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </Grid>
-        </Grid>
+        <ThemeProvider theme={defaultTheme}>
+            <Box sx={{ display: 'flex' }}>
+                <CssBaseline />
+                <AppBar position="absolute" open={open}>
+                    <Toolbar
+                        sx={{
+                            pr: '24px', // keep right padding when drawer closed
+                        }}
+                    >
+                        <IconButton
+                            edge="start"
+                            color="inherit"
+                            aria-label="open drawer"
+                            onClick={toggleDrawer}
+                            sx={{
+                                marginRight: '36px',
+                                ...(open && { display: 'none' }),
+                            }}
+                        >
+                            <MenuIcon />
+                        </IconButton>
+                        <Typography
+                            component="h1"
+                            variant="h6"
+                            color="inherit"
+                            noWrap
+                            sx={{ flexGrow: 1 }}
+                        >
+                            {userData && userData.name && `Welcome, ${userData.name}`}
+                        </Typography>
+                        <IconButton color="inherit">
+                            <Badge color="secondary">
+                                <NotificationsIcon />
+                            </Badge>
+                        </IconButton>
+                        <IconButton color="inherit" onClick={handleLogout}>
+                            <Badge color="secondary">
+                                <LogoutIcon />
+                            </Badge>
+                        </IconButton>
+                    </Toolbar>
+                </AppBar>
+                <Drawer variant="permanent" open={open}>
+                    <Toolbar
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-end',
+                            px: [1],
+                        }}
+                    >
+                        <IconButton onClick={toggleDrawer}>
+                            <ChevronLeftIcon />
+                        </IconButton>
+                    </Toolbar>
+                    <Divider />
+                    <List component="nav">
+                        {ListItems}
+                    </List>
+                </Drawer>
+
+                <Outlet />
+
+            </Box>
+        </ThemeProvider>
+
     );
-};
-
-export default Dashboard;
+}
